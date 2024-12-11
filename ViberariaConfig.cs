@@ -25,7 +25,7 @@ public class ViberariaConfig : ModConfig
     [Header("HealthVibrationScaling")]
     [DefaultValue(true)] public bool HealthVibratationScalingEnabled;
     [Range(MinIntensity,MaxIntensity)] [Increment(IncrementIntensity)] [DefaultValue(1f)] public float HealthMaxIntensity;
-    [Range(MinIntensity,MaxIntensity)] [Increment(IncrementIntensity)] [DefaultValue(0.2f)] public float HealthMinIntensity;
+    [Range(0,MaxIntensity)] [Increment(IncrementIntensity)] [DefaultValue(0.2f)] public float HealthMinIntensity;
     #endregion
 
     #region Damage config

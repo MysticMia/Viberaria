@@ -3,6 +3,7 @@ using Terraria.DataStructures;
 using Terraria.ModLoader;
 
 using static Viberaria.bVibration;
+using static Viberaria.VibrationManager.VibrationManager;
 using static Viberaria.bClient;
 using static Viberaria.tSystem;
 using static Viberaria.ViberariaConfig;
@@ -26,7 +27,7 @@ public class tPlayer : ModPlayer
     public override void NaturalLifeRegen(ref float regen)
     {
         if (Player == Main.LocalPlayer)
-            HealthUpdated(Player.statLife, Player.statLifeMax);
+            HealthUpdated(Player.statLife, Player.statLifeMax2);
     }
 
     public override void Kill(double damage, int hitDirection, bool pvp, PlayerDeathReason damageSource)
@@ -34,10 +35,11 @@ public class tPlayer : ModPlayer
         if (Player == Main.LocalPlayer)
             Died(damageSource, Player.respawnTimer );
     }
+
     public override void OnHurt(Player.HurtInfo hurtInfo)
     {
         if (Player == Main.LocalPlayer)
-            Damaged(hurtInfo, !Player.dead, Player.statLifeMax2);
+            Damaged(hurtInfo, Player.statLifeMax2);
     }
 
     public override void OnConsumeAmmo(Item weapon, Item ammo)

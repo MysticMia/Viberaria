@@ -13,6 +13,7 @@ public static class VibrationManager
     private static VibrationEvent _currentEvent = null;
     private static readonly Dictionary<VibrationPriority, LinkedList<VibrationEvent>> EventLists = new();
     private static bool _processingBusy = false;
+    private static float _currentStrength = 0f;
 
     static VibrationManager()
     {
@@ -75,6 +76,9 @@ public static class VibrationManager
     /// </summary>
     private static void ProcessEvents()
     {
+        if (_processingBusy) return;
+        _processingBusy = true;
+
         foreach (var priority in Enum.GetValues(typeof(VibrationPriority))
                                      .Cast<VibrationPriority>()
                                      .OrderByDescending(priority => (int)priority))
@@ -86,7 +90,11 @@ public static class VibrationManager
             }
 
             // only vibrate if vibration strength/event changed
-            if (_currentEvent == currentEvent) continue;
+            if (_currentEvent == currentEvent)
+            {
+                _processingBusy = false;
+                return;
+            }
             _currentEvent = currentEvent;
 
             int callbackTime = (int)(currentEvent.Timestamp - DateTime.Now).TotalMilliseconds + currentEvent.Duration;
@@ -106,24 +114,29 @@ public static class VibrationManager
 
     private static async void VibrateAllDevices(float strength, int callBackTime)
     {
-        if (Instance.DebugChatMessages)
-        {
-            tChat.LogToPlayer($"Vibrating at `{strength}` for `{callBackTime}` msec", Color.Lime);
-            if (strength < 0)
+        if (_currentStrength != strength)
+        { // lower the amount of chat spam
+            _currentStrength = strength;
+            if (Instance.DebugChatMessages)
             {
-                tChat.LogToPlayer("Tried to vibrate at a strength below 0! Clamping.", Color.Red);
-                strength = 0;
-            }
-            if (strength > 1)
-            {
-                tChat.LogToPlayer("Tried to vibrate at a strength above 1! Clamping.", Color.Red);
-                strength = 1;
-            }
-        }
+                tChat.LogToPlayer($"Vibrating at `{strength}` for `{callBackTime}` msec", Color.Lime);
+                if (strength < 0)
+                {
+                    tChat.LogToPlayer("Tried to vibrate at a strength below 0! Clamping.", Color.Red);
+                    strength = 0;
+                }
 
-        foreach (var device in _client.Devices)
-        {
-            await device.VibrateAsync(strength * Instance.VibratorMaxIntensity).ConfigureAwait(false);
+                if (strength > 1)
+                {
+                    tChat.LogToPlayer("Tried to vibrate at a strength above 1! Clamping.", Color.Red);
+                    strength = 1;
+                }
+            }
+
+            foreach (var device in _client.Devices)
+            {
+                await device.VibrateAsync(strength * Instance.VibratorMaxIntensity).ConfigureAwait(false);
+            }
         }
 
         await Task.Delay(callBackTime).ConfigureAwait(false);
@@ -132,9 +145,14 @@ public static class VibrationManager
 
     private static async void StopVibratingAllDevices()
     {
-        // Similar to VibrateAllDevices but without calling ProcessEvents afterward
-        if (Instance.DebugChatMessages)
-            tChat.LogToPlayer("Vibrating at `0`", Color.Lime);
+        if (_currentStrength != 0)
+        { // lower the amount of chat spam
+            _currentStrength = 0;
+
+            // Similar to VibrateAllDevices but without calling ProcessEvents afterward
+            if (Instance.DebugChatMessages)
+                tChat.LogToPlayer("Vibrating at `0`", Color.Lime);
+        }
 
         foreach (var device in _client.Devices)
         {

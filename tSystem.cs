@@ -4,7 +4,7 @@ using Terraria;
 using Terraria.ModLoader;
 using Terraria.UI;
 
-using static Viberaria.bVibration;
+using static Viberaria.VibrationManager.VibrationManager;
 
 namespace Viberaria;
 
