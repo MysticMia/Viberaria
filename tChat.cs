@@ -21,7 +21,7 @@ public static class tChat
             if (Instance.DebugChatMessages)
             {
                 string time = DateTime.Now.Minute + ":" +
-                              (DateTime.Now.Second + DateTime.Now.Millisecond * 0.001f).ToString("0.00");
+                              (DateTime.Now.Second + DateTime.Now.Millisecond * 0.001f).ToString("00.00");
                 msg = time + "| " + msg;
             }
             ChatHelper.SendChatMessageToClient(LiteralText(msg), color, Main.myPlayer);

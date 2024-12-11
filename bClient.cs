@@ -32,8 +32,9 @@ public static class bClient
         catch (Exception ex)
         {
             tChat.LogToPlayer($"Viberaria Error: {ex.Message}", Color.OrangeRed);
-            tChat.LogToPlayer("Viberaria: Likely couldn't connect to Intiface. Make sure you have " +
-                              "Intiface Central running on this pc or turn off this mod.", Color.Orange);
+            tChat.LogToPlayer("Viberaria: Likely couldn't connect to Intiface. Make sure you have Intiface Central " +
+                              "running on this pc or disable the mod in the mod configuration.", Color.Orange);
+            await Task.Delay(4000);
             ClientConnect();
         }
     }
