@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
+using Terraria.ModLoader;
 using static Viberaria.ViberariaConfig;
 using static Viberaria.bClient;
 
@@ -14,6 +15,7 @@ public static class VibrationManager
     private static readonly Dictionary<VibrationPriority, LinkedList<VibrationEvent>> EventLists = new();
     private static bool _processingBusy = false;
     private static float _currentStrength = 0f;
+    private static object _currentStrengthLock = new();
 
     static VibrationManager()
     {
@@ -112,30 +114,39 @@ public static class VibrationManager
         _processingBusy = false;
     }
 
+    /// <summary>
+    /// Vibrate all connected toys at a given strength for a given time, after which it calls ProcessEvents to get
+    /// the next up vibration (eg. a lower priority event).
+    /// </summary>
+    /// <param name="strength">How strong the toys should vibrate.</param>
+    /// <param name="callBackTime">How long to vibrate the toy.</param>
     private static async void VibrateAllDevices(float strength, int callBackTime)
     {
-        if (_currentStrength != strength)
-        { // lower the amount of chat spam
-            _currentStrength = strength;
-            if (Instance.DebugChatMessages)
+        lock (_currentStrengthLock)
+        {
+            // ReSharper disable once CompareOfFloatsByEqualityOperator
+            if (_currentStrength != strength)
             {
-                tChat.LogToPlayer($"Vibrating at `{strength}` for `{callBackTime}` msec", Color.Lime);
-                if (strength < 0)
+                // lower the amount of chat spam
+                _currentStrength = strength;
+                if (Instance.DebugChatMessages)
                 {
-                    tChat.LogToPlayer("Tried to vibrate at a strength below 0! Clamping.", Color.Red);
-                    strength = 0;
+                    tChat.LogToPlayer($"Vibrating at `{strength}` for `{callBackTime}` msec", Color.Lime);
+                    // safeguard to prevent crash from out of bounds strength.
+                    if (strength < 0)
+                    {
+                        tChat.LogToPlayer("Tried to vibrate at a strength below 0! Clamping.", Color.Red);
+                        strength = 0;
+                    }
+
+                    if (strength > 1)
+                    {
+                        tChat.LogToPlayer("Tried to vibrate at a strength above 1! Clamping.", Color.Red);
+                        strength = 1;
+                    }
                 }
 
-                if (strength > 1)
-                {
-                    tChat.LogToPlayer("Tried to vibrate at a strength above 1! Clamping.", Color.Red);
-                    strength = 1;
-                }
-            }
-
-            foreach (var device in _client.Devices)
-            {
-                await device.VibrateAsync(strength * Instance.VibratorMaxIntensity).ConfigureAwait(false);
+                TryVibrateAllDevices(strength);
             }
         }
 
@@ -143,20 +154,51 @@ public static class VibrationManager
         ProcessEvents();
     }
 
-    private static async void StopVibratingAllDevices()
+    /// <summary>
+    /// A helper function to handle Intiface errors when vibrating toys.
+    /// </summary>
+    /// <param name="strength">The strength to vibrate toys at.</param>
+    private static async void TryVibrateAllDevices(float strength)
     {
-        if (_currentStrength != 0)
-        { // lower the amount of chat spam
-            _currentStrength = 0;
-
-            // Similar to VibrateAllDevices but without calling ProcessEvents afterward
-            if (Instance.DebugChatMessages)
-                tChat.LogToPlayer("Vibrating at `0`", Color.Lime);
-        }
-
-        foreach (var device in _client.Devices)
+        try
         {
-            await device.VibrateAsync(0).ConfigureAwait(false);
+            foreach (var device in _client.Devices)
+            {
+                await device.VibrateAsync(strength * Instance.VibratorMaxIntensity).ConfigureAwait(false);
+            }
+        }
+        catch (Buttplug.Core.ButtplugException ex)
+        {
+            tChat.LogToPlayer($"Error trying to vibrate plug(s) with strength `{strength}`! \"{ex.Message}\"",
+                Color.Red);
+            ModContent.GetInstance<Viberaria>().Logger.ErrorFormat("Couldn't vibrate plug(s) on strength `{0}`: {1}",
+                strength, ex.StackTrace);
+        }
+        catch (Exception ex)
+        {
+            // todo
+            ModContent.GetInstance<Viberaria>().Logger.FatalFormat("UNHANDLED EXCEPTION while trying to vibrate plug(s) on strength `{0}`: {1}", strength, ex.StackTrace);
+        }
+    }
+
+    /// <summary>
+    /// A helper function to handle resetting the vibration manager and setting all toys to 0 strength
+    /// </summary>
+    private static void StopVibratingAllDevices()
+    {
+        lock (_currentStrengthLock)
+        {
+            // lower the amount of chat spam
+            if (_currentStrength != 0)
+            {
+                _currentStrength = 0;
+
+                // Similar to VibrateAllDevices but without calling ProcessEvents afterward
+                if (Instance.DebugChatMessages)
+                    tChat.LogToPlayer("Vibrating at `0`", Color.Lime);
+            }
+
+            TryVibrateAllDevices(0);
         }
     }
 }

@@ -116,5 +116,30 @@ Configs: {
 			Label: Show Debug Chat Messages
 			Tooltip: Show in chat how strong toys are being vibrated.
 		}
+
+		IntifaceIpDetails: {
+			Tooltip: Set the port to connect to Intiface. Default is localhost:12345
+			Label: Intiface IP Details
+		}
+	}
+
+	IntifaceIpSubpage: {
+		UseLocalhost: {
+			Tooltip: Whether to use "localhost: 12345" or "192.168.0.0:12345" with the given IP address
+			Label: Use Localhost
+		}
+
+		IntifaceIpAddress: {
+			Tooltip: The address to connect to. Make a list of [192, 168, 0, 0] to connect to 192.168.0.0
+			Label: Intiface Ip Address
+		}
+
+		IntifaceIpPort: {
+			Tooltip: The port to connect to. The default for Intiface is usually 12345
+			Label: Intiface Ip Port
+		}
+
+		Headers.IntifaceIP: Intiface IP Header
+		Tooltip: ""
 	}
 }
