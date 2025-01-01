@@ -66,7 +66,8 @@ public static class bVibration
     public static void Died(PlayerDeathReason damageSource, int respawnTimer)
     {
         if(!Instance.ViberariaEnabled ||
-           !Instance.DeathVibrationEnabled)
+           !Instance.DeathVibrationEnabled ||
+           !_client.Connected)
             return;
 
         int deathDelay;
@@ -86,7 +87,8 @@ public static class bVibration
     public static async Task DamageOverTimeVibration(int durationTicks)
     {
         if(!Instance.ViberariaEnabled ||
-           !Instance.DebuffVibrationEnabled)
+           !Instance.DebuffVibrationEnabled ||
+           !_client.Connected)
             return;
 
         if (_debuffActive)
@@ -112,7 +114,8 @@ public static class bVibration
     public static void PotionVibration(Item item)
     {
         if(!Instance.ViberariaEnabled ||
-           !Instance.PotionUseVibrationEnabled)
+           !Instance.PotionUseVibrationEnabled ||
+           !_client.Connected)
             return;
 
         AddEvent(VibrationPriority.Potion, Instance.PotionVibrationDurationMsec, Instance.PotionVibrationIntensity, true);
@@ -120,6 +123,10 @@ public static class bVibration
 
     public static void SoIStartedBlasting(Item weapon, Item ammo)
     {
+        if (!Instance.ViberariaEnabled ||
+            // !Instance. blasting enabled ||
+            !_client.Connected)
+            return;
         AmmoConsumptionRate += .01;
     }
 
