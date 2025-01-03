@@ -5,7 +5,6 @@ using Terraria.ModLoader;
 using static Viberaria.bVibration;
 using static Viberaria.VibrationManager.VibrationManager;
 using static Viberaria.bClient;
-using static Viberaria.tSystem;
 using static Viberaria.ViberariaConfig;
 
 
@@ -13,20 +12,17 @@ namespace Viberaria;
 
 public class tPlayer : ModPlayer
 {
-    private readonly int[] _debuffs = { 20, 24, 44, 70 };
-    // 20 = Poisoned
-    // 24 = On Fire!
-    // 44 = Frostburn
-    // 70 = Acid venom
-
     public override void OnEnterWorld()
-        => ClientConnect();
+    {
+        DebuffsSelected = FindModBuffs(Instance.Debuffs.DebuffNames);
+        ClientConnect();
+    }
 
     public override void Load()
         => ClientHandles();
 
     public override void Unload()
-        => ClientDisconnect();
+        => ClientRemoveHandles();
 
     public override void NaturalLifeRegen(ref float regen)
     {
@@ -37,7 +33,7 @@ public class tPlayer : ModPlayer
     public override void Kill(double damage, int hitDirection, bool pvp, PlayerDeathReason damageSource)
     {
         if (Player != Main.LocalPlayer) return;
-        Died(damageSource, Player.respawnTimer );
+        Died(Player.respawnTimer);
     }
 
     public override void OnHurt(Player.HurtInfo hurtInfo)
@@ -62,7 +58,7 @@ public class tPlayer : ModPlayer
     public override async void PreUpdateBuffs()
     {
         if (Player != Main.LocalPlayer) return;
-        foreach (var buffId in _debuffs)
+        foreach (var buffId in DebuffsSelected)
         {
             int index = Player.FindBuffIndex(buffId);
             if (index != -1)
@@ -72,15 +68,16 @@ public class tPlayer : ModPlayer
 
     public override void PostUpdate()
     {
-        if(!Instance.ViberariaEnabled)
+        if (!Instance.ViberariaEnabled)
         {
             Reset();
             Halt();
             return;
         }
-        if (tSys.WorldLoaded && _client.Connected != true)
-        {
-            ClientConnect();
-        }
+        // todo: reenable
+        // if (tSys.WorldLoaded && _client.Connected != true)
+        // {
+        //     ClientConnect();
+        // }
     }
 }

@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Terraria;
-using Terraria.DataStructures;
 using Viberaria.VibrationManager;
 using static Viberaria.bClient;
 using static Viberaria.ViberariaConfig;
@@ -50,6 +49,8 @@ public static class bVibration
            !_client.Connected)
             return;
 
+        if (hurtInfo.Damage < Instance.MinimumDamageForVibration) return;
+
         float damageStrength;
         if (Instance.StaticDamageVibration)
         {
@@ -63,7 +64,7 @@ public static class bVibration
         AddEvent(VibrationPriority.Hurt, Instance.DamageVibrationDurationMsec, damageStrength, true);
     }
 
-    public static void Died(PlayerDeathReason damageSource, int respawnTimer)
+    public static void Died(int respawnTimer)
     {
         if(!Instance.ViberariaEnabled ||
            !Instance.DeathVibrationEnabled ||

@@ -58,6 +58,8 @@ public static class VibrationManager
 
     private static VibrationEvent GetNextEvent(LinkedList<VibrationEvent> eventList)
     {
+        // Todo: There is likely a crash when locking the list if the intiface server stops while connected
+        //  "NullReferenceException" at Viberaria.VibrationManager.VibrationManager.GetNextEvent(LinkedList`1 eventList)
         // prevent async threads from modifying eventList while potentially removing elements.
         lock (eventList)
         {
@@ -80,6 +82,7 @@ public static class VibrationManager
     {
         if (_processingBusy) return;
         _processingBusy = true;
+        string logMsg = "Iterating events.";
 
         foreach (var priority in Enum.GetValues(typeof(VibrationPriority))
                                      .Cast<VibrationPriority>()
@@ -95,18 +98,23 @@ public static class VibrationManager
             if (_currentEvent == currentEvent)
             {
                 _processingBusy = false;
+                if (Instance.DebugChatMessages) tChat.LogToPlayer(logMsg + " Event ongoing.", Color.GreenYellow);
                 return;
             }
             _currentEvent = currentEvent;
 
             int callbackTime = (int)(currentEvent.Timestamp - DateTime.Now).TotalMilliseconds + currentEvent.Duration;
-            callbackTime = callbackTime < 0 ? 0 : callbackTime;
-            VibrateAllDevices(currentEvent.Strength, callbackTime);
+            if (callbackTime <= 0) continue;
 
+            // first unset busy, then vibrate. In case async VibrateAllDevices somehow finished before _busy is set
+            // to false. Then it would not re-run ProcessEvents() and never call StopVibratingAllDevices.
             _processingBusy = false;
+            if (Instance.DebugChatMessages) tChat.LogToPlayer(logMsg + " Event found.", Color.GreenYellow);
+            VibrateAllDevices(currentEvent.Strength, callbackTime);
             return;
         }
 
+        if (Instance.DebugChatMessages) tChat.LogToPlayer(logMsg + " Events passed! :D", Color.GreenYellow);
         if (_currentEvent.HasPassed())
         {
             StopVibratingAllDevices();
@@ -150,7 +158,8 @@ public static class VibrationManager
             }
         }
 
-        await Task.Delay(callBackTime).ConfigureAwait(false);
+        await Task.Delay(callBackTime);
+        if (Instance.DebugChatMessages) tChat.LogToPlayer($"  Event `{strength},{callBackTime}` finished.", Color.GreenYellow);
         ProcessEvents();
     }
 
@@ -164,20 +173,20 @@ public static class VibrationManager
         {
             foreach (var device in _client.Devices)
             {
-                await device.VibrateAsync(strength * Instance.VibratorMaxIntensity).ConfigureAwait(false);
+                await device.VibrateAsync(strength * Instance.VibratorMaxIntensity);
             }
         }
         catch (Buttplug.Core.ButtplugException ex)
         {
             tChat.LogToPlayer($"Error trying to vibrate plug(s) with strength `{strength}`! \"{ex.Message}\"",
                 Color.Red);
-            ModContent.GetInstance<Viberaria>().Logger.ErrorFormat("Couldn't vibrate plug(s) on strength `{0}`: {1}",
+            ModContent.GetInstance<Viberaria>().Logger.ErrorFormat("Couldn't vibrate plug(s) on strength `{0}`:\n{1}",
                 strength, ex.StackTrace);
         }
         catch (Exception ex)
         {
             // todo
-            ModContent.GetInstance<Viberaria>().Logger.FatalFormat("UNHANDLED EXCEPTION while trying to vibrate plug(s) on strength `{0}`: {1}", strength, ex.StackTrace);
+            ModContent.GetInstance<Viberaria>().Logger.FatalFormat("UNHANDLED EXCEPTION while trying to vibrate plug(s) on strength `{0}`:\n{1}", strength, ex.StackTrace);
         }
     }
 

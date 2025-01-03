@@ -121,6 +121,21 @@ Configs: {
 			Tooltip: Set the port to connect to Intiface. Default is localhost:12345
 			Label: Intiface IP Details
 		}
+
+		IntifaceAddress: {
+			Tooltip: ""
+			Label: Intiface Address
+		}
+
+		Debuffs: {
+			Label: Debuffs
+			Tooltip: ""
+		}
+
+		MinimumDamageForVibration: {
+			Tooltip: How much damage the player should take before toys vibrate. (Eg. if you don't want "1 damage" to trigger the toy)
+			Label: Minimum Damage For Vibration
+		}
 	}
 
 	IntifaceIpSubpage: {
@@ -139,7 +154,22 @@ Configs: {
 			Label: Intiface Ip Port
 		}
 
-		Headers.IntifaceIP: Intiface IP Header
-		Tooltip: ""
+		Headers.IntifaceIP: Intiface IP
+		Tooltip: Configure the Intiface Connection URI
+	}
+
+	DebuffSubpage: {
+		Tooltip: Configure what debuffs activate debuff vibrations
+		Headers.Debuffs: Debuffs
+
+		DebuffNames: {
+			Label: Debuff Names
+			Tooltip: Use the format `Mod.DebuffName` or their id `50`. Note: A mod's Buff ID depends on enabled mods, so should only be used for vanilla.
+		}
+
+		ModNameReplacement: {
+			Tooltip: Replace a mod's debuff prefix with another (shorter) version.
+			Label: Mod Name Replacement
+		}
 	}
 }

@@ -73,6 +73,7 @@ public class tSystem : ModSystem
 
     public override void Load()
     {
+        tSys = this;
         if (!Main.dedServ)
         {
             _configInterface = new UserInterface();
